@@ -1,0 +1,139 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Task;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class TaskControllerTest extends TestCase
+{
+    use RefreshDatabase; // Resets the database for each test
+
+    /**
+     * Test fetching all tasks.
+     *
+     * @return void
+     */
+    public function test_index_returns_a_list_of_tasks(): void
+    {
+        // Arrange: Create 3 tasks in the database
+        Task::factory()->count(3)->create();
+
+        // Act: Make a GET request to the /api/tasks endpoint
+        $response = $this->getJson('/api/tasks');
+
+        // Assert: Check the response
+        $response->assertStatus(200)
+                 ->assertJsonCount(3, 'data'); // Assuming you use API Resources
+    }
+
+    /**
+     * Test fetching a single task.
+     *
+     * @return void
+     */
+    public function test_show_returns_a_single_task(): void
+    {
+        // Arrange: Create a task
+        $task = Task::factory()->create();
+
+        // Act: Make a GET request to the specific task's endpoint
+        $response = $this->getJson("/api/tasks/{$task->id}");
+
+        // Assert: Check the response
+        $response->assertStatus(200)
+                 ->assertJson([
+                     'data' => [
+                         'id' => $task->id,
+                         'title' => $task->title,
+                     ]
+                 ]);
+    }
+
+    /**
+     * Test creating a new task with valid data.
+     *
+     * @return void
+     */
+    public function test_store_creates_a_new_task(): void
+    {
+        // Arrange: Prepare the data for the new task
+        $taskData = [
+            'title' => 'A New Awesome Task',
+            'description' => 'Details about this new task.',
+        ];
+
+        // Act: Make a POST request to create the task
+        $response = $this->postJson('/api/tasks', $taskData);
+
+        // Assert: Check the response and database
+        $response->assertStatus(201) // 201 Created
+                 ->assertJsonFragment(['title' => 'A New Awesome Task']);
+
+        $this->assertDatabaseHas('tasks', [
+            'title' => 'A New Awesome Task'
+        ]);
+    }
+
+    /**
+     * Test that creating a task fails with invalid data.
+     *
+     * @return void
+     */
+    public function test_store_fails_with_validation_error(): void
+    {
+        // Arrange: Prepare invalid data (e.g., missing title)
+        $taskData = ['description' => 'This won\'t work.'];
+
+        // Act: Make a POST request
+        $response = $this->postJson('/api/tasks', $taskData);
+
+        // Assert: Check for validation errors
+        $response->assertStatus(422) // 422 Unprocessable Entity
+                 ->assertJsonValidationErrors(['title']);
+    }
+
+    /**
+     * Test updating an existing task.
+     *
+     * @return void
+     */
+    public function test_update_modifies_an_existing_task(): void
+    {
+        // Arrange: Create a task to update
+        $task = Task::factory()->create();
+        $updateData = ['title' => 'Updated Task Title'];
+
+        // Act: Make a PUT request to update the task
+        $response = $this->putJson("/api/tasks/{$task->id}", $updateData);
+
+        // Assert: Check the response and database
+        $response->assertStatus(200)
+                 ->assertJsonFragment(['title' => 'Updated Task Title']);
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'title' => 'Updated Task Title'
+        ]);
+    }
+
+    /**
+     * Test deleting a task.
+     *
+     * @return void
+     */
+    public function test_destroy_removes_a_task(): void
+    {
+        // Arrange: Create a task to delete
+        $task = Task::factory()->create();
+
+        // Act: Make a DELETE request
+        $response = $this->deleteJson("/api/tasks/{$task->id}");
+
+        // Assert: Check the response and that the record is gone
+        $response->assertStatus(204); // 204 No Content
+        $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
+}

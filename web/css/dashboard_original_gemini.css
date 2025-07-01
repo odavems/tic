@@ -1,0 +1,27 @@
+.dashboard-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    padding: 14px; /* Reduced from 20px by 30% */
+}
+.chart-container {
+    width: 22.5%; /* Reduced from 45% by 50% */
+    min-width: 200px; /* Also reduced from 400px by 50% for consistency */
+    /* min-width: 400px;    Minimum width for responsiveness */
+    margin-bottom: 20px;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    /* box-sizing: border-box; */
+}
+.chart-title {
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+
+
+
+

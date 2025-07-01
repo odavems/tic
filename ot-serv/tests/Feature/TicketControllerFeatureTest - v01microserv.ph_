@@ -1,0 +1,516 @@
+<?php
+
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http; // For HTTP requests
+use Illuminate\Http\Response;
+use App\Models\User; // Adjust to your User model path
+
+use Tymon\JWTAuth\Facades\JWTAuth; // If using tymon/jwt-auth for JWT authentication
+use Tymon\JWTAuth\Exceptions\JWTException; // For JWT exceptions    
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Exception;
+use Mockery;
+
+
+class TicketControllerFeatureTest extends TestCase
+{
+    use DatabaseTransactions;
+    //use RefreshDatabase; // Add this trait
+
+    protected $tableName = 'tickets';
+
+    // Different services on different ports
+    protected $authServiceUrl = 'http://localhost:8887';
+    protected $ticketsServiceUrl = 'http://localhost:8888';
+
+    protected $loginEndpoint = '/api/v1/auth/login';
+    protected $ticketsEndpoint = '/api/v1/ots'; // Assuming this is your tickets endpoint
+    //protected $endpoint = 'http://localhost:8887/api/v1/auth/login';
+    
+    protected $user;
+    //protected $uuid = '00000000-0000-0000-0000-000000000001'; // Example UUID for testing
+    protected $uuid;
+    protected $token;
+
+
+    /**
+     * Set up the test environment
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+    
+        // Get service URLs from environment or config
+        //$this->authServiceUrl = env('AUTH_SERVICE_URL', 'http://localhost:8887');
+        //$this->ticketsServiceUrl = env('TICKETS_SERVICE_URL', 'http://localhost:8888');
+    
+    // Set up endpoints
+        $this->loginEndpoint = $this->authServiceUrl . '/api/v1/auth/login';
+        $this->ticketsEndpoint = $this->ticketsServiceUrl . '/api/v1/ots';    
+
+        // Create test tables
+        $this->createTestTable();
+        $this->createUserForTesting();
+        
+        // Authenticate and get token
+        $this->authenticateUser();
+
+        DB::table($this->tableName)->truncate();
+    }
+
+/**
+ * Check if services are available before running tests
+ */
+protected function ensureServicesAreRunning(): void
+{
+    // Check auth service
+    try {
+        $response = Http::timeout(5)->get($this->authServiceUrl . '/health');
+        if (!$response->successful()) {
+            $this->markTestSkipped('Auth service is not running on ' . $this->authServiceUrl);
+        }
+    } catch (Exception $e) {
+        $this->markTestSkipped('Auth service is not accessible: ' . $e->getMessage());
+    }
+
+    // Check tickets service
+    try {
+        $response = Http::timeout(5)->get($this->ticketsServiceUrl . '/health');
+        if (!$response->successful()) {
+            $this->markTestSkipped('Tickets service is not running on ' . $this->ticketsServiceUrl);
+        }
+    } catch (Exception $e) {
+        $this->markTestSkipped('Tickets service is not accessible: ' . $e->getMessage());
+    }
+}
+
+    
+/**
+ * Create a test user for authentication using Factory
+ */
+protected function createUserForTesting(): void
+{
+    // Create users table if it doesn't exist (for testing)
+    if (!Schema::hasTable('users')) {
+        Schema::create('users', function ($table) {
+            $table->id();
+            $table->string('uuid', 36)->unique();
+            $table->string('name');
+            $table->string('username')->nullable();
+            $table->string('email')->unique();
+            $table->string('role')->default('supervisor');
+            $table->string('active')->default('1');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
+    }
+
+    // Using factory (if available) or manual creation
+    $this->uuid = '00000000-0000-0000-0000-000000000001';
+    
+    // Force create the user bypassing mass assignment protection
+    $this->user = new User();
+    $this->user->forceFill([
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => Hash::make('password123'),
+        'uuid' => $this->uuid,
+        'role' => 'supervisor',
+        'active' => '1'
+    ]);
+    $this->user->save();
+}
+
+
+
+
+    /**
+     * Authenticate user and get JWT token from external auth service
+     */
+    protected function authenticateUser(): void
+    {
+        try {
+            $response = Http::timeout(10)->post($this->loginEndpoint, [
+                'email' => 'dmontoya1@test.com',
+                'password' => '12345678'
+            ]);
+            
+            if ($response->successful()) {
+                $responseData = $response->json();
+                $this->token = $responseData['access_token'] ?? null;
+                $this->uuid = $responseData['uuid'] ?? null;
+                
+                if (!$this->token) {
+                    throw new Exception('No access token received from login response');
+                }
+            } else {
+                throw new Exception('Authentication failed: ' . $response->body());
+            }
+        } catch (Exception $e) {
+            throw new Exception('Failed to connect to auth service: ' . $e->getMessage());
+        }
+    }
+
+
+
+    /**
+     * Get authenticated headers for HTTP requests
+     */
+    protected function getAuthHeaders(): array
+    {
+        return [
+            'Authorization' => 'Bearer ' . $this->token,
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json'
+        ];
+    }
+
+
+    /**
+     * Make HTTP request to tickets service
+     */
+    protected function makeTicketsRequest(
+        string $method, 
+        string $endpoint, 
+        array $data = [], 
+        array $headers = []): \Illuminate\Http\Client\Response
+    {
+        $url = $this->ticketsServiceUrl . $endpoint;
+        
+        return Http::timeout(10)
+            ->withHeaders($headers)
+            ->$method($url, $data);
+    }
+
+
+
+
+ /**  ESTA CREACION NO ESTABA COMO MICROSERVICIOS
+ * Create a test table for testing purposes
+ */
+protected function createTestTable(): void
+{
+    if (!Schema::hasTable($this->tableName)) {
+        Schema::create($this->tableName, function ($table) {
+            // Use increments() for auto-incrementing primary key
+            $table->increments('ticket_id');
+            $table->string('title', 100);
+            $table->text('description');
+            $table->enum('status', ['nuevo', 'asignado', 'en_progreso', 'en_espera', 'resuelto', 'cerrado'])->index();
+            $table->enum('worktype', ['electrico','telecom','planta_externa','civil']);
+            $table->enum('alarmtype', ['hardware','software','red','seguridad']);
+            $table->enum('priority', ['bajo','medio','alto','critico'])->index();
+            $table->integer('customer_id')->index();
+            // Note: You might need to create these tables or remove foreign key constraints for testing
+            // $table->foreign('customer_id')->references('customer_id')->on('customers');
+            $table->integer('site_id')->index()->nullable();
+            // $table->foreign('site_id')->references('site_id')->on('sites');
+            $table->string('created_by_uuid', 36)->index();
+            $table->string('assigned_to_uuid', 36)->index()->nullable();
+            $table->string('supervisor_uuid', 36)->index()->nullable();
+            $table->timestamp('created_at')->nullable()->useCurrent();
+            $table->timestamp('updated_at')->nullable();
+            $table->timestamp('resolved_at')->nullable();
+            $table->timestamp('closed_at')->nullable();
+        });
+    }
+}
+
+
+
+    /** @test */
+    public function it_requires_authentication_to_access_tickets()
+    {
+        // Act: Make request without authentication to tickets service
+        $response = $this->makeTicketsRequest('get', '/api/v1/ots');
+
+        // Assert: Should be unauthorized
+        $this->assertEquals(401, $response->status());
+    }
+
+
+
+    /** @test */
+    public function it_can_get_tickets_list_when_authenticated()
+    {
+        // Arrange: Create some test data (you might need to do this via API or seed data)
+        /**$this->insertTestTickets(3);
+
+        // Act: Make authenticated request to tickets service
+        $response = $this->makeTicketsRequest('get', '/api/v1/ots', [], $this->getAuthHeaders());
+
+        // Assert
+        $this->assertEquals(200, $response->status());
+        
+        $responseData = $response->json();
+        $this->assertArrayHasKey('tickets', $responseData);
+        $this->assertArrayHasKey('total_pages', $responseData);
+        $this->assertArrayHasKey('current_page', $responseData);
+        $this->assertCount(3, $responseData['tickets']); **/
+
+        //------------------
+        // Arrange: Create some test data
+        $this->insertTestTickets(3);
+
+        // Act: Make authenticated request
+        $response = $this->getJson($this->ticketsEndpoint, $this->getAuthHeaders());
+
+        // Assert
+        $response->assertStatus(Response::HTTP_OK)
+                 ->assertJsonStructure([
+                     'tickets' => [
+                         '*' => [
+                             'ticket_id',
+                             'title',
+                             'description',
+                             'status',
+                             'worktype',
+                             'alarmtype',
+                             'priority',
+                             'customer_id',
+                             'site_id',
+                             'created_by_uuid',
+                             'assigned_to_uuid',
+                             'supervisor_uuid',
+                             'created_at',
+                             'updated_at',
+                             'resolved_at',
+                         ]
+                     ],
+                     'total_pages',
+                     'current_page'
+                 ])
+                 ->assertJsonCount(3, 'tickets')
+                 ->assertJson([
+                     'total_pages' => 1,
+                     'current_page' => 1
+                 ]);  
+
+    }
+
+
+    /** @test */
+    public function it_returns_empty_list_when_no_tickets_exist_with_auth()
+    {
+        // Act: Make authenticated request without any data
+        /**$response = $this->makeTicketsRequest('get', '/api/v1/ots', [], $this->getAuthHeaders());
+
+        // Assert
+        $this->assertEquals(200, $response->status());
+        
+        $responseData = $response->json();
+        $this->assertEquals([], $responseData['tickets']);
+        $this->assertEquals(0, $responseData['total_pages']);
+        $this->assertEquals(1, $responseData['current_page']);
+        **/
+
+         // Act: Make authenticated request without any data
+        $response = $this->getJson($this->ticketsEndpoint, $this->getAuthHeaders());
+        
+        // Assert
+        $response->assertStatus(Response::HTTP_OK)
+                 ->assertJson([
+                     'tickets' => [],
+                     'total_pages' => 0,
+                     'current_page' => 1
+                 ]);
+    }
+
+    
+    /** @test */
+    public function it_paginates_tickets_correctly_with_auth()
+    {
+        // Arrange: Create 12 tickets
+        $this->insertTestTickets(12);
+
+        // Debug: Check what URLs we're actually calling
+        $firstPageUrl = $this->ticketsServiceUrl . '/api/v1/ots?page=1';
+        $secondPageUrl = $this->ticketsServiceUrl . '/api/v1/ots?page=2';
+        
+        dump('First page URL:', $firstPageUrl);
+        dump('Second page URL:', $secondPageUrl);
+        dump('Auth headers:', $this->getAuthHeaders());
+
+        // Act: Get first page with auth
+        $response = Http::timeout(10)
+            ->withHeaders($this->getAuthHeaders())
+            ->get($firstPageUrl);
+
+        // Debug first page response
+        dump('First page status:', $response->status());
+        dump('First page response:', $response->json());
+
+        // Assert first page
+        $this->assertEquals(200, $response->status());
+        $responseData = $response->json();
+        $this->assertCount(5, $responseData['tickets']);
+        $this->assertEquals(5, $responseData['total_pages']);
+        $this->assertEquals(1, $responseData['current_page']);
+
+        // Act: Get second page with auth
+        $response = Http::timeout(10)
+            ->withHeaders($this->getAuthHeaders())
+            ->get($secondPageUrl);
+
+        // Debug second page response
+        dump('Second page status:', $response->status());
+        dump('Second page response:', $response->json());
+
+        // Assert second page
+        $this->assertEquals(200, $response->status());
+        $responseData = $response->json();
+        
+        // More lenient assertions for debugging
+        $this->assertArrayHasKey('tickets', $responseData);
+        $this->assertArrayHasKey('total_pages', $responseData);
+        $this->assertArrayHasKey('current_page', $responseData);
+        
+        // Check if pagination is working at all
+        if (count($responseData['tickets']) === 5 && $responseData['current_page'] === 1) {
+            $this->fail('Pagination parameter is not being processed by the API. Check your API implementation.');
+        }
+        
+        $this->assertEquals(2, $responseData['current_page'], 
+            'Expected current_page to be 2, but got ' . $responseData['current_page'] . 
+            '. This suggests the pagination parameter is not being handled correctly by your API.'
+        );
+    }
+        
+
+
+    /** @test */
+    public function it_handles_invalid_token()
+    {
+        // Arrange: Create test data
+        $this->insertTestTickets(3);
+
+        // Act: Make request with invalid token
+        $response = $this->makeTicketsRequest('get', '/api/v1/ots', [], [
+            'Authorization' => 'Bearer invalid_token_here',
+            'Accept' => 'application/json'
+        ]);
+
+        // Assert: Should be unauthorized
+        $this->assertEquals(401, $response->status());
+    }
+
+
+
+    /** @test */
+    public function it_handles_service_unavailable()
+    {
+        // Test what happens when tickets service is down
+        $originalUrl = $this->ticketsServiceUrl;
+        $this->ticketsServiceUrl = 'http://localhost:9999'; // Non-existent service
+        
+        try {
+            //$response = $this->makeTicketsRequest('get', '/api/v1/ots', [], $this->getAuthHeaders());
+            $response = $this->makeTicketsRequest('get', '/api/v1/ots?page=2', [], $this->getAuthHeaders());
+            $this->fail('Expected exception was not thrown');
+        } catch (Exception $e) {
+
+            // $this->assertStringContainsString('Connection refused', $e->getMessage());
+            // Check for cURL error 7 or connection refused patterns
+            $this->assertTrue(
+                str_contains($e->getMessage(), 'cURL error 7') ||
+                str_contains($e->getMessage(), 'Connection refused') ||
+                str_contains($e->getMessage(), 'Failed to connect'),
+                'Expected connection error, got: ' . $e->getMessage()
+        );
+        } finally {
+            $this->ticketsServiceUrl = $originalUrl;
+        }
+    }
+
+
+
+    /** @test */
+    public function authenticated_user_can_access_multiple_pages()
+    {
+        // Arrange: Create exactly 10 tickets (2 pages)
+        $this->insertTestTickets(10);
+
+        // Act & Assert: First page
+        //$response = $this->getJson($this->ticketsEndpoint . '?page=1', $this->getAuthHeaders());
+        $response = $this->makeTicketsRequest('get', '/api/v1/ots?page=1', [], $this->getAuthHeaders());
+        $response->assertStatus(Response::HTTP_OK)
+                 ->assertJson([
+                     'total_pages' => 2,
+                     'current_page' => 1
+                 ]);
+
+        // Act & Assert: Second page
+        //$response = $this->getJson($this->ticketsEndpoint . '?page=2', $this->getAuthHeaders());
+        $response = $this->makeTicketsRequest('get', '/api/v1/ots?page=2', [], $this->getAuthHeaders());
+        $response->assertStatus(Response::HTTP_OK)
+                 ->assertJson([
+                     'total_pages' => 2,
+                     'current_page' => 2
+                 ]);
+    }
+
+
+
+/**
+ * Helper method to insert test tickets
+ */
+protected function insertTestTickets(int $count): void
+{
+     // Option 1: Insert via API (if tickets service has a create endpoint)
+        /* for ($i = 1; $i <= $count; $i++) {
+            $this->makeTicketsRequest('post', '/api/v1/tickets', [
+                'title' => "Test Ticket {$i}",
+                'description' => "This is a test description for ticket {$i}",
+                'status' => $i % 2 === 0 ? 'cerrado' : 'nuevo',
+                'worktype' => 'electrico',
+                'alarmtype' => 'hardware',
+                'priority' => ['bajo', 'medio', 'alto'][($i - 1) % 3],
+                'customer_id' => 1,
+            ], $this->getAuthHeaders());
+        } */
+
+
+    $tickets = [];
+    for ($i = 1; $i <= $count; $i++) {
+        $tickets[] = [
+            'title' => "Test Ticket {$i}",
+            'description' => "This is a test description for ticket {$i}",
+            'status' => $i % 2 === 0 ? 'cerrado' : 'nuevo', // Use valid enum values
+            'worktype' => 'electrico', // Add required field
+            'alarmtype' => 'hardware', // Add required field
+            'priority' => ['bajo', 'medio', 'alto'][($i - 1) % 3], // Use valid enum values
+            'customer_id' => 1, // You'll need to create a customer or use a valid ID
+            'created_by_uuid' => $this->user->uuid, // Use the test user's UUID
+            'created_at' => now()->subMinutes($count - $i + 1),
+            'updated_at' => now()->subMinutes($count - $i + 1)
+        ];
+    }
+    
+    DB::table($this->tableName)->insert($tickets);
+}
+
+
+
+    protected function tearDown(): void
+    {
+        // Logout to clean up
+        if ($this->token) {
+           // auth()->logout();
+        }
+        DB::table($this->tableName)->truncate();
+
+        parent::tearDown();
+    }
+}

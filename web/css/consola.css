@@ -1,0 +1,117 @@
+
+
+.button {
+    background-color: #04AA6D; /* Green */
+    border-radius: 4px;
+    color: white;
+    padding: 3px 14px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 2px 2px;
+    cursor: pointer;
+}
+  
+  .button2 {background-color: #008CBA;} /* Blue */
+  .button3 {background-color: #f44336;} /* Red */ 
+  .button4 {background-color: #e7e7e7; color: black;} /* Gray */ 
+  .button5 {background-color: #555555;} /* Black */
+
+
+
+body {
+    font-family: "Lato", sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+h2 {
+    color: #333;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.error {
+    color: red;
+    padding: 10px;
+    background-color: #ffeeee;
+    border-left: 4px solid red;
+    margin-bottom: 20px;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.logout {
+    background-color: #f44336;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.create_ticket {
+    background-color: green;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+
+
+
+.status-enespera {
+    background-color: yellow;
+}
+
+.status-resuelto {
+    background-color: green;
+}
+
+.status-cerrado {
+    background-color: lightgreen;
+}
+
+.status-cancelado {
+    background-color: darkolivegreen;
+}
+
+.status-otroestado {
+    background-color: lightblue;
+}
+
+
+.priority-medio {
+    background-color: yellow;
+}
+
+.priority-alto {
+    background-color: rgba(255, 68, 0, 0.459);
+}
+
+.priority-critico {
+    background-color: red;
+}
+
+.priority-otroestado {
+    background-color: lightblue;
+}
+
+
+

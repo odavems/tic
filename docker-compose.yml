@@ -1,0 +1,228 @@
+version: '3.8'
+
+#RED INTERNA
+networks:
+  laravel_network:
+    driver: bridge
+
+volumes:
+   db_server11_data_auth:
+     driver: local
+   db_server22_data_ot:
+     driver: local
+   db_server33_data_mail:
+     driver: local
+
+services:
+
+  web:
+    image: php:8.0-apache
+    container_name: web-container
+    volumes:
+      - ./web:/var/www/html
+    ports:
+      - 8123:80
+    networks:
+      - laravel_network
+  #   #build:
+  #    #target: web
+  #    #context: .
+
+
+  #DATABASE MySQL 3306 para AUTH-SERV
+  db_server11_auth:
+    image: mysql:8.0
+    container_name: db_server11_auth
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: micro_auth
+      #MYSQL_USER: root  (falla que esto reinicia el container)
+      MYSQL_PASSWORD: root
+    ports:
+      - "3311:3306"
+    networks:
+      - laravel_network
+    volumes:
+      - db_server11_data_auth:/var/lib/mysql
+
+  #DATABASE MySQL 3306 para ot-SERV
+  db_server22_ot:
+    image: mysql:8.0
+    container_name: db_server22_ot
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: micro_ot
+      #MYSQL_USER: root  (falla que esto reinicia el container)
+      MYSQL_PASSWORD: root
+    ports:
+      - "3312:3306"
+    networks:
+      - laravel_network
+    volumes:
+      - db_server22_data_ot:/var/lib/mysql
+
+
+  #DATABASE MYSQL 3306 para MAIL-SERV
+  db_server33_mail:
+    image: mysql:8.0
+    container_name: db_server33_mail
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: micro_mail
+      #MYSQL_USER: root  (falla que esto reinicia el container)
+      MYSQL_PASSWORD: root
+    ports:
+      - "3313:3306"
+    networks:
+      - laravel_network
+    volumes:
+      - db_server33_data_mail:/var/lib/mysql
+
+
+  #01 ---> Servicio de Auth auth-serv
+  auth-serv:
+    build:
+      #target: web
+      context: ./auth-serv
+      dockerfile: Dockerfile
+    container_name: auth-serv
+    restart: unless-stopped
+    volumes:
+      - ./auth-serv:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_KEY=base64:LsvWP5mQ+fOk2vqDwSXbxLvlbG+6CHWAd8Rjqq6XbR8=
+      - APP_DEBUG=false
+      - JWT_SECRET=tKaTtfOrBTgbq7Rm9VopiDbTaNMijxfcozKLgmr38f14aDkbhJFniuCLUPj58g7G
+
+      - DB_CONNECTION=mysql
+      - DB_HOST=db_server11_auth
+      - DB_PORT=3306
+      - DB_DATABASE=micro_auth
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+
+      - SESSION_DRIVER=database
+      - SESSION_LIFETIME=120
+      - SESSION_ENCRYPT=false
+      - SESSION_PATH=/
+      - SESSION_DOMAIN=null
+
+      - BROADCAST_CONNECTION=log
+      - FILESYSTEM_DISK=local
+      - QUEUE_CONNECTION=database
+
+      - OT_SERVICE_URL=http://localhost:8888
+      - MAIL_SERVICE_URL=http://localhost:8889
+
+    env_file:
+      - ./auth-serv/.env
+    ports:
+      - "8887:80"
+    depends_on:
+      - db_server11_auth
+    links:
+      - db_server11_auth
+    networks:
+      - laravel_network
+    #command: php artisan serve --host=
+
+
+  #02 ---> Servicio de ot ot-serv
+  ot-serv:
+    build:
+      context: ./ot-serv
+      dockerfile: Dockerfile
+    container_name: ot-serv
+    restart: unless-stopped
+    volumes:
+      - ./ot-serv:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_KEY=base64:LsvWP5mQ+fOk2vqDwSXbxLvlbG+6CHWAd8Rjqq6XbR8=
+      - APP_DEBUG=false
+      - JWT_SECRET=tKaTtfOrBTgbq7Rm9VopiDbTaNMijxfcozKLgmr38f14aDkbhJFniuCLUPj58g7G
+
+      - DB_CONNECTION=mysql
+      - DB_HOST=db_server22_ot
+      - DB_PORT=3306
+      - DB_DATABASE=micro_ot
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+
+      - SESSION_DRIVER=database
+      - SESSION_LIFETIME=120
+      - SESSION_ENCRYPT=false
+      - SESSION_PATH=/
+      - SESSION_DOMAIN=null
+
+      - BROADCAST_CONNECTION=log
+      - FILESYSTEM_DISK=local
+      - QUEUE_CONNECTION=database
+
+      - AUTH_SERVICE_URL=http://localhost:8887
+      - MAIL_SERVICE_URL=http://localhost:8889
+      # AUTH_SERVICE_URL=http://auth-serv
+      # MAIL_SERVICE_URL=http://mail-serv
+
+    env_file:
+      - ./ot-serv/.env    
+    ports:
+      - "8888:80"
+    depends_on:
+      - db_server22_ot
+    links:
+      - db_server22_ot
+    networks:
+      - laravel_network
+  #   #command: php artisan serve --host=
+
+  #03 ---> SERVICIO MAIL mail-serv
+  mail-service:
+    build:
+      context: ./mail-serv
+      dockerfile: Dockerfile
+    container_name: mail-serv
+    restart: unless-stopped
+    volumes:
+      - ./mail-serv:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_KEY=base64:LsvWP5mQ+fOk2vqDwSXbxLvlbG+6CHWAd8Rjqq6XbR8=
+      - APP_DEBUG=false
+      - JWT_SECRET=tKaTtfOrBTgbq7Rm9VopiDbTaNMijxfcozKLgmr38f14aDkbhJFniuCLUPj58g7G
+
+      - DB_CONNECTION=mysql
+      - DB_HOST=db_server22_ot
+      - DB_PORT=3306
+      - DB_DATABASE=micro_ts
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+
+      - SESSION_DRIVER=database
+      - SESSION_LIFETIME=120
+      - SESSION_ENCRYPT=false
+      - SESSION_PATH=/
+      - SESSION_DOMAIN=null
+
+      - BROADCAST_CONNECTION=log
+      - FILESYSTEM_DISK=local
+      - QUEUE_CONNECTION=database
+
+      - AUTH_SERVICE_URL=http://localhost:8887
+      - OT_SERVICE_URL=http://localhost:8888
+
+    env_file:
+      - ./mail-serv/.env      
+    ports:
+      - "8889:80"
+    depends_on:
+      - db_server33_mail
+    links:
+      - db_server33_mail
+    networks:
+      - laravel_network
+  #   #command: php artisan serve --host=

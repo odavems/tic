@@ -1,0 +1,13 @@
+    public function login()
+    {
+        $credentials = request(['email', 'password']);
+
+        if (! $token = auth()->attempt($credentials)) {
+            //return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'No autorizado']);
+            //return response()->json(['error' => 'No autorizado'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        //return response()->json(['message' => 'Login correcto'], Response::HTTP_OK);
+        return $this->respondWithToken($token);
+    }

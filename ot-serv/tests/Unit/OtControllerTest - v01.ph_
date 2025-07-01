@@ -1,0 +1,339 @@
+<?php
+
+namespace Tests\Unit;
+
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Exception;
+use Mockery;
+
+class OtControllerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected $controller;
+    protected $tableName = 'tickets'; // Replace with your actual table name
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Replace 'YourController' with your actual controller class name
+        $this->controller = new \App\Http\Controllers\OtController();
+        
+        // Set the table property if it's protected/private
+        // You might need to use reflection or make it public for testing
+        $reflection = new \ReflectionClass($this->controller);
+        $property = $reflection->getProperty('table');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, $this->tableName);
+    }
+
+    /** @test */
+    public function it_returns_paginated_tickets_successfully()
+    {
+        // Arrange: Create test data
+        $testTickets = collect([
+            (object)['id' => 1, 'title' => 'Ticket 1', 'created_at' => '2024-01-01 10:00:00'],
+            (object)['id' => 2, 'title' => 'Ticket 2', 'created_at' => '2024-01-02 10:00:00'],
+            (object)['id' => 3, 'title' => 'Ticket 3', 'created_at' => '2024-01-03 10:00:00'],
+        ]);
+
+        // Mock DB facade
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andReturnSelf();
+            
+        DB::shouldReceive('count')
+            ->once()
+            ->andReturn(3);
+            
+        DB::shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('offset')
+            ->with(0)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('limit')
+            ->with(5)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('get')
+            ->once()
+            ->andReturn($testTickets);
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey('tickets', $responseData);
+        $this->assertArrayHasKey('total_pages', $responseData);
+        $this->assertArrayHasKey('current_page', $responseData);
+        $this->assertEquals(3, count($responseData['tickets']));
+        $this->assertEquals(1, $responseData['total_pages']);
+        $this->assertEquals(1, $responseData['current_page']);
+    }
+
+    /** @test */
+    public function it_handles_pagination_correctly_for_second_page()
+    {
+        // Arrange
+        $_GET['page'] = 2;
+        
+        $testTickets = collect([
+            (object)['id' => 6, 'title' => 'Ticket 6', 'created_at' => '2024-01-06 10:00:00'],
+        ]);
+
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andReturnSelf();
+            
+        DB::shouldReceive('count')
+            ->once()
+            ->andReturn(6); // 6 total tickets
+            
+        DB::shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('offset')
+            ->with(5) // Second page offset
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('limit')
+            ->with(5)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('get')
+            ->once()
+            ->andReturn($testTickets);
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertEquals(2, $responseData['total_pages']);
+        $this->assertEquals(2, $responseData['current_page']);
+        
+        // Clean up
+        unset($_GET['page']);
+    }
+
+    /** @test */
+    public function it_defaults_to_page_1_when_no_page_parameter()
+    {
+        // Arrange
+        unset($_GET['page']); // Ensure no page parameter
+        
+        $testTickets = collect([]);
+
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andReturnSelf();
+            
+        DB::shouldReceive('count')
+            ->once()
+            ->andReturn(0);
+            
+        DB::shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('offset')
+            ->with(0) // Should default to page 1 (offset 0)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('limit')
+            ->with(5)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('get')
+            ->once()
+            ->andReturn($testTickets);
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertEquals(1, $responseData['current_page']);
+    }
+
+    /** @test */
+    public function it_calculates_total_pages_correctly()
+    {
+        // Arrange - Test with 12 tickets (should be 3 pages with 5 per page)
+        $testTickets = collect([]);
+
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andReturnSelf();
+            
+        DB::shouldReceive('count')
+            ->once()
+            ->andReturn(12);
+            
+        DB::shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('offset')
+            ->with(0)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('limit')
+            ->with(5)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('get')
+            ->once()
+            ->andReturn($testTickets);
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertEquals(3, $responseData['total_pages']); // ceil(12/5) = 3
+    }
+
+    /** @test */
+    public function it_handles_database_exceptions()
+    {
+        // Arrange
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andThrow(new Exception('Database connection failed'));
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $this->assertEquals(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey('error', $responseData);
+        $this->assertEquals('Database connection failed', $responseData['error']);
+    }
+
+    /** @test */
+    public function it_handles_invalid_page_parameter()
+    {
+        // Arrange
+        $_GET['page'] = 'invalid';
+        
+        $testTickets = collect([]);
+
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andReturnSelf();
+            
+        DB::shouldReceive('count')
+            ->once()
+            ->andReturn(0);
+            
+        DB::shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('offset')
+            ->with(-5) // (int)'invalid' = 0, so (0-1)*5 = -5
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('limit')
+            ->with(5)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('get')
+            ->once()
+            ->andReturn($testTickets);
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        
+        // Clean up
+        unset($_GET['page']);
+    }
+
+    /** @test */
+    public function it_orders_tickets_by_created_at_descending()
+    {
+        // Arrange
+        $testTickets = collect([
+            (object)['id' => 2, 'title' => 'Newer Ticket', 'created_at' => '2024-01-02 10:00:00'],
+            (object)['id' => 1, 'title' => 'Older Ticket', 'created_at' => '2024-01-01 10:00:00'],
+        ]);
+
+        DB::shouldReceive('table')
+            ->with($this->tableName)
+            ->andReturnSelf();
+            
+        DB::shouldReceive('count')
+            ->once()
+            ->andReturn(2);
+            
+        DB::shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('offset')
+            ->with(0)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('limit')
+            ->with(5)
+            ->once()
+            ->andReturnSelf();
+            
+        DB::shouldReceive('get')
+            ->once()
+            ->andReturn($testTickets);
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        
+        $responseData = json_decode($response->getContent(), true);
+        $tickets = $responseData['tickets'];
+        
+        // Verify the newer ticket comes first (descending order)
+        $this->assertEquals(2, $tickets[0]['id']);
+        $this->assertEquals(1, $tickets[1]['id']);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+}
