@@ -21,7 +21,8 @@ include('templates/menu.php');
         // Check if token exists in session, POST or GET
         $token = "";
         $uuid = $_SESSION['user_uuid'] ?? ""; // Get UUID from session if available
-        $user_email = $_SESSION['user_email'] ?? ""; // Get email from session if available 
+        $user_email = $_SESSION['user_email'] ?? ""; // Get email from session if available
+        $user_role = $_SESSION['user_role'] ?? "";
 
         //$created_by_uuid = $_SESSION['user_uuid'] ?? ""; // Get supervisor_uuid from session if available
 
@@ -57,7 +58,7 @@ include('templates/menu.php');
             $username = "root";
             $password = "admin";
             $dbname = "micro_ots";
-
+    
             $conn = new mysqli($servername, $username, $password, $dbname);
 
             if ($conn->connect_error) {
@@ -80,7 +81,6 @@ include('templates/menu.php');
     
             //$_SESSION['ticket_id'] =  htmlspecialchars($ticket['ticket_id'] ?? 'N/A');
 
-
             // Fetch ticket data
             $sql = "SELECT ticket_id, title, description, status, worktype, alarmtype, priority, 
                     customer_id, site_id, created_by_uuid, assigned_to_uuid, supervisor_uuid
@@ -98,9 +98,15 @@ include('templates/menu.php');
             $ticket = $result->fetch_assoc();
             $current_status = $ticket['status'];
 
-            $possible_statuses = ['en_progreso','en_espera','resuelto','cerrado']; // Define possible statuses
+            //$possible_statuses = ['en_progreso','en_espera','resuelto','cerrado']; // Define possible statuses
 
-            
+                if ($user_role === 'tecnico') {
+                    $possible_statuses = ['en_progreso','en_espera','resuelto'];
+                } else {
+                $possible_statuses = ['en_progreso','en_espera','resuelto','cerrado'];
+                }
+    
+    
             // Process form submission
             if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $new_status = $_POST['status'] ?? '';

@@ -1,4 +1,10 @@
-<?php               
+<?php  
+
+//ESTE ARCHIVO CREA UN JSON CON LOS DATOS 
+//DE USUARIOS: NOMBRES Y UUIDS
+//CON ESTOS DATOS SE HACE EN EL ARCHIVO consola.php
+//EL FETCH CON LA FUNCION fetchUserName($uuid) 
+//PARA PRESENTAR EL NOMBRE EN LUGAR DEL UUID
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -63,7 +69,7 @@
     // echo "</pre>";
 
    //echo "<script>console.log('users: " . json_encode($users_names_and_uuids) . "');</script>"; 
-   echo "<script>console.log('NAMES and UUIDS:', " . json_encode($users_names_and_uuids, JSON_PRETTY_PRINT) . ");</script>";
+    echo "<script>console.log('get_users.php  NAMES and UUIDS:', " . json_encode($users_names_and_uuids, JSON_PRETTY_PRINT) . ");</script>";
 
 ?>
 

@@ -181,10 +181,12 @@ class AuthController extends Controller
         // Get the uuid of the authenticated user
         $uuid = auth()->user()->uuid; 
         //$uuid = (Auth::user())->uuid;
+        $role = auth()->user()->role; 
 
         return response()->json([
             'access_token' => $token,
             'uuid' => $uuid,
+            'user_role' => $role,
             'token_type' => 'bearer',
             //'expires_in' => auth()->factory()->getTTL() * 60
             'expires_in' => Auth::guard('api')->factory()->getTTL() * 60

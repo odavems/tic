@@ -14,14 +14,7 @@
 <?php 
 include('templates/menu.php');
 ?> 
-    
-    <div class="header">
-        <a href="create_ticket.php" class="create_ticket">Crear</a>
-        <h2>Consola de Ordenes de Trabajo</h2>
-        <a href="index.php" class="logout">Logout</a>
-    </div>
-    
-    <?php
+        <?php
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     } 
@@ -30,6 +23,34 @@ include('templates/menu.php');
     include('get_users.php');
     
     ?> 
+    
+    <!--
+    <div class="header">
+        <a href="create_ticket.php" class="create_ticket">Crear</a>
+        <h2>Consola de Ordenes de Trabajo</h2>
+        <a href="index.php" class="logout">Logout</a>
+    </div>
+    -->
+    
+    <div class="header">
+    <?php if ($user_role !== 'tecnico'): ?>
+        <a href="create_ticket.php" class="create_ticket">Crear</a>
+    <?php endif; ?>
+    <h2>Consola de Ordenes de Trabajo</h2>
+    <a href="index.php" class="logout">Logout</a>
+</div>
+    
+   
+    <?php
+    // if (session_status() === PHP_SESSION_NONE) {
+    //    session_start();
+    //} 
+    
+    //include('get_tickets.php');
+    //include('get_users.php');
+    //
+    ?> 
+   
 
     <?php if (!empty($error_message)): ?>
         <div class="error"><?php echo htmlspecialchars($error_message); ?></div>
@@ -205,7 +226,22 @@ include('templates/menu.php');
                         <td><?php echo htmlspecialchars($supervisor_name); ?></td>
                         <td><?php echo htmlspecialchars($assigned_to_name); ?></td>
                         <td><button onclick="updateTicket(<?php echo htmlspecialchars($ticket['ticket_id'] ?? 0); ?>)"  type="button" class="button" style="background-color: blue; color: white;">Actualizar</button></td>
-                        <td><button onclick="cancelTicket(<?php echo htmlspecialchars($ticket['ticket_id'] ?? 0); ?>)" type="button" class="button" style="background-color: gray; color: white;">Cancelar</button></td>
+                        
+                        
+                         <!--<td><button onclick="cancelTicket(<? // php echo htmlspecialchars($ticket['ticket_id'] ?? 0); ?>)" type="button" class="button" style="background-color: gray; color: white;">Cancelar</button></td> -->
+                        
+                        <td>
+                            <?php if ($user_role === 'tecnico'): ?>
+                                <button type="button" class="button" style="background-color: #cccccc; color: #666; cursor: not-allowed;" disabled>
+                                Cancelar
+                                </button>
+                            <?php else: ?>
+                                <button onclick="cancelTicket(<?php echo htmlspecialchars($ticket['ticket_id'] ?? 0); ?>)" type="button" class="button" style="background-color: gray; color: white;">
+                                Cancelar
+                                </button>
+                            <?php endif; ?>
+                        </td>
+                        
                                          
                     </tr>
                     
@@ -272,13 +308,16 @@ include('templates/menu.php');
         }
 
 
-        console.log("Dashboard loaded");
-        console.log("Number of tickets displayed: <?php echo $ticket_count; ?>");
-        console.log("Your token is <?php echo $token; ?>");
-        console.log("Your uuid is <?php echo $uuid; ?>");
-        console.log("Your user_email is <?php echo $user_email; ?>");
-        console.log("var escaped_supervisor_name <?php echo $escaped_supervisor_name; ?>");
-        console.log("var supervisor_name <?php echo $supervisor_name; ?>");
+        console.log("---->>> consola.php <<<----");
+        console.log("---->>> Dashboard loaded <<<----");
+        console.log("Number of tickets displayed: = <?php echo $ticket_count; ?>");
+        console.log("Your token is = <?php echo $token; ?>");
+        console.log("Your uuid is = <?php echo $uuid; ?>");
+        console.log("Your user_email is = <?php echo $user_email; ?>");
+        console.log("var escaped_supervisor_name = <?php echo $escaped_supervisor_name; ?>");
+        console.log("var supervisor_name = <?php echo $supervisor_name; ?>");
+        console.log("var user_role = <?php echo $user_role; ?>");
+        console.log("---->>> consola.php <<<----");
 
 
         

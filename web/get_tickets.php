@@ -9,6 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $token = "";
 $uuid = $_SESSION['user_uuid'] ?? ""; // Get UUID from session if available
 $user_email = $_SESSION['user_email'] ?? ""; // Get email from session if available  
+$user_role = $_SESSION['user_role'] ?? "";
 
 if (isset($_SESSION['access_token'])) {
     $token = $_SESSION['access_token'];
@@ -30,6 +31,8 @@ if (empty($token)) {
 echo("<script>console.log('echo Var user_email is " . $user_email . "');</script>");
 echo("<script>console.log('echo Var uuid is " . $uuid . "');</script>");
 echo("<script>console.log('echo Var token is " . $token . "');</script>");
+echo("<script>console.log('echo Var user_role is " . $user_role . "');</script>");
+echo("<script>console.log('echo Var --------get_tickets.php------ ');</script>");
 
 // Initialize variables
 $tickets = [];

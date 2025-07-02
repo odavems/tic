@@ -1,6 +1,6 @@
-<!doctype html>
 <?php
 
+//CLD-937f339f-af9a-40b4-8062-38dd70d7941a
 // Start session to store the token
 session_start();
 
@@ -10,6 +10,7 @@ $token = "";
 $user_email = "";
 $email = "";
 $user_uuid = "";
+$user_role = "";
 
 // Check if the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -50,16 +51,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $response = json_decode($result, true);
         if (isset($response['access_token'])) {
             $message = "OK you are logged";
+            //el json del API devuelve access_token y grabamos en $token
             $token = $response['access_token'];
             $user_uuid = $response['uuid'];
+            $user_role = $response['user_role'];
             
             // Store token in session
             $_SESSION['access_token'] = $token;
             $_SESSION['user_email'] = $email;
             //$_SESSION['user_uuid'] = $response['uuid'];
             $_SESSION['user_uuid'] = $response['uuid'];
+            $_SESSION['user_role'] = $response['user_role'];
 
-            // Redirect to dashboard
+            // ---->>>>>>>>>>  Redirect to dashboard
             header("Location: consola.php");
             //exit();
 

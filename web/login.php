@@ -1,18 +1,12 @@
-<!doctype html>
 <?php
-
     $pageTitle = 'Login';
     // include('templates/header.php');
 ?>
 
-<?php 
-//session_start();
-include('get_login.php'); ?>
-
+<?php include('get_login.php'); ?>
 
 <!-- <link rel="stylesheet" href="css/menu.css"> -->
 <link rel="stylesheet" href="css/login.css">
-
 
 </head>
 
@@ -22,7 +16,7 @@ include('get_login.php'); ?>
     <!-- <div class="container"> -->
         <form method="POST" action="get_login.php">
             <div class="form-group" >
-                <label for="email">Email:  dmontoya1@test.com</label>
+                <label for="email">Email: Superv-> dmontoya1@test.com / Tec-> tecnico1@test.com</label>
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
@@ -44,6 +38,7 @@ include('get_login.php'); ?>
             <p>Your token is: </p>
             <div class="token"><?php echo htmlspecialchars($token); ?></div>
             <p>Your uuid is: <?php echo htmlspecialchars($uuid); ?></p>
+            <p>Your role is: <?php echo htmlspecialchars($role); ?></p>
 
         <?php endif; ?>
     </div>
@@ -57,6 +52,7 @@ include('get_login.php'); ?>
                 console.log("login.php Your user_email is <?php echo $user_email; ?>");
                 console.log("login.php Your token is <?php echo $token; ?>");
                 console.log("login.php Your uuid is <?php echo $uuid; ?>");
+                console.log("login.php Your ROLE is <?php echo $user_role; ?>");
             <?php endif; ?>
         <?php endif; ?>
     </script>
