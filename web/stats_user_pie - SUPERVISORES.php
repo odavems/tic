@@ -16,7 +16,7 @@ if ($conn->connect_error) {
 //$query = "SELECT created_by_uuid, COUNT(*) as count FROM tickets GROUP BY created_by_uuid";
 //$result = $conn->query($query);
 
-$query = "SELECT assigned_to_uuid, COUNT(*) as count FROM tickets GROUP BY assigned_to_uuid";
+$query = "SELECT assigned_by_uuid, COUNT(*) as count FROM tickets GROUP BY assigned_by_uuid";
 $result = $conn->query($query);
 
 
@@ -33,7 +33,7 @@ $data = array(
     )
 );
 
-function fetchUserName2($uuid) {
+function fetchUserName($uuid) {
     if (isset($_SESSION['users_names_and_uuids'])) {
         foreach ($_SESSION['users_names_and_uuids'] as $user) {
             if ($user['uuid'] === $uuid) {
@@ -58,7 +58,7 @@ if ($result && $result->num_rows > 0) {
     foreach ($result as $row) {
         // Fetch the user name using the UUID from the query
         //$user_name = fetchUserName($row['created_by_uuid']);
-        $user_name = fetchUserName2($row['assigned_to_uuid']);
+        $user_name = fetchUserName($row['assigned_by_uuid']);
         
         // Add to chart data
         $data['labels'][] = $user_name;
@@ -73,7 +73,7 @@ if ($result && $result->num_rows > 0) {
 
 // Set content type to JSON
 header('Content-Type: application/json');
-//echo json_encode($data);
+echo json_encode($data);
 
 $conn->close();
 ?>

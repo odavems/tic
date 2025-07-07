@@ -16,14 +16,33 @@ volumes:
 services:
 
   web:
+    build: ./web # This tells Docker to build the image from the Dockerfile in the current directory
     image: php:8.0-apache
     container_name: web-container
     volumes:
       - ./web:/var/www/html
     ports:
       - 8123:80
+    env_file:
+      - .env
+    environment:
+      # Define the base URLs for your API services
+      # from .env file:
+      - AUTH_SERVICE_BASE_URL=${AUTH_SERVICE_BASE_URL}
+      - OT_SERVICE_BASE_URL=${OT_SERVICE_BASE_URL}
+      - MAIL_SERVICE_BASE_URL=${MAIL_SERVICE_BASE_URL}
+      #- AUTH_SERVICE_BASE_URL=http://auth-serv/api/v1
+      - DEBUG=true
+      - APP_ENV=development
+      # Or load all variables from .env file:
+      # env_file:
+      #   - .env
     networks:
       - laravel_network
+    depends_on:
+      - auth-serv
+      - ot-serv
+      - mail-service
   #   #build:
   #    #target: web
   #    #context: .
@@ -115,8 +134,9 @@ services:
       - FILESYSTEM_DISK=local
       - QUEUE_CONNECTION=database
 
-      - OT_SERVICE_URL=http://localhost:8888
-      - MAIL_SERVICE_URL=http://localhost:8889
+      - AUTH_SERVICE_BASE_URL=${AUTH_SERVICE_BASE_URL}
+      - OT_SERVICE_BASE_URL=${OT_SERVICE_BASE_URL}
+      - MAIL_SERVICE_BASE_URL=${MAIL_SERVICE_BASE_URL}
 
     env_file:
       - ./auth-serv/.env
@@ -163,10 +183,10 @@ services:
       - FILESYSTEM_DISK=local
       - QUEUE_CONNECTION=database
 
-      - AUTH_SERVICE_URL=http://localhost:8887
-      - MAIL_SERVICE_URL=http://localhost:8889
-      # AUTH_SERVICE_URL=http://auth-serv
-      # MAIL_SERVICE_URL=http://mail-serv
+      - AUTH_SERVICE_BASE_URL=${AUTH_SERVICE_BASE_URL}
+      - OT_SERVICE_BASE_URL=${OT_SERVICE_BASE_URL}
+      - MAIL_SERVICE_BASE_URL=${MAIL_SERVICE_BASE_URL}
+
 
     env_file:
       - ./ot-serv/.env    
@@ -212,8 +232,10 @@ services:
       - FILESYSTEM_DISK=local
       - QUEUE_CONNECTION=database
 
-      - AUTH_SERVICE_URL=http://localhost:8887
-      - OT_SERVICE_URL=http://localhost:8888
+      - AUTH_SERVICE_BASE_URL=${AUTH_SERVICE_BASE_URL}
+      - OT_SERVICE_BASE_URL=${OT_SERVICE_BASE_URL}
+      - MAIL_SERVICE_BASE_URL=${MAIL_SERVICE_BASE_URL}
+      #- AUTH_SERVICE_URL=http://localhost:8887
 
     env_file:
       - ./mail-serv/.env      

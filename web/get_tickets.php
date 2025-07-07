@@ -43,13 +43,16 @@ try {
     // Initialize cURL session
     //$ch = curl_init('http://localhost:8888/api/v1/ots');
     
-    $ch= curl_init();
-    $api_url = 'http://localhost:8888/api/v1/ots';
+    //$ch= curl_init();
+    //$api_url = 'http://localhost:8888/api/v1/ots';
+    $apiBaseUrl = getenv('OT_SERVICE_BASE_URL') ?: 'http://localhost:8888/api/v1';
     $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;  // Get current page from URL
-    $api_url .= '?page=' . $current_page;  // Append the 'page' parameter
-
+    //$api_url .= '?page=' . $current_page;  // Append the 'page' parameter
+    $api_url = $apiBaseUrl . '/ots?page=' . $current_page;  // Construct the full URL
+    $ch = curl_init($api_url);
+    
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, $api_url);
+    //curl_setopt($ch, CURLOPT_URL, $api_url);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(

@@ -1,5 +1,14 @@
 <?php
-    $pageTitle = 'Create Ticket';
+    //session_start();
+    // Start session if not already started
+    //--------------------------------------------------------
+     if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $pageTitle = 'Crear OT';
+?>
+
+<?php
     include('templates/header.php');
 ?>
 
@@ -11,16 +20,9 @@
 
 <?php 
 include('templates/menu.php');
-
 ?> 
 
 <?php 
-
-    // Start session if not already started
-    //--------------------------------------------------------
-     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
 
     // Check if token exists in session, POST or GET
     $token = "";
@@ -68,10 +70,10 @@ include('templates/menu.php');
             if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Database connection
                 
-                $servername = "localhost";
+                $servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
                 $username = "root";
-                $password = "admin";
-                $dbname = "micro_ots";
+                $password = "root";
+                $dbname = "micro_ot";
                 
                 // Create connection
                 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -111,7 +113,7 @@ include('templates/menu.php');
                     
  
                     
-                    $stmt = $conn->prepare("INSERT INTO Tickets (title, description, status, 
+                    $stmt = $conn->prepare("INSERT INTO tickets (title, description, status, 
                                         worktype, alarmtype, priority, 
                                         customer_id, site_id, created_by_uuid, assigned_to_uuid, 
                                         supervisor_uuid) 
@@ -131,14 +133,14 @@ include('templates/menu.php');
                         $action = "ticket_created";
                         $new_value = "Ticket #$ticket_id created";
                         
-                        $stmt = $conn->prepare("INSERT INTO Ticket_History (ticket_id, user_uuid, action, new_value) 
+                        $stmt = $conn->prepare("INSERT INTO ticket_history (ticket_id, user_uuid, action, new_value) 
                                             VALUES (?, ?, ?, ?)");
                         $stmt->bind_param("isss", $ticket_id, $created_by_uuid, $action, $new_value);
                         $stmt->execute();
                         
                         // If the ticket is assigned, create an assignment record
                         if ($assigned_to_uuid !== null && $supervisor_uuid !== null) {
-                            $stmt = $conn->prepare("INSERT INTO Assignments (ticket_id, technician_uuid, supervisor_uuid) 
+                            $stmt = $conn->prepare("INSERT INTO assignments (ticket_id, technician_uuid, supervisor_uuid) 
                                                 VALUES (?, ?, ?)");
                             $stmt->bind_param("iss", $ticket_id, $assigned_to_uuid, $supervisor_uuid);
                             $stmt->execute();
@@ -175,7 +177,11 @@ include('templates/menu.php');
                     echo "<div class='alert alert-success'>OT creada con Ticket ID: " . $result["ticket_id"] . "</div>";
 
                     include('send_mail.php');
-                    header("Location: consola.php");
+                    //header("Location: consola.php");
+
+                    // Redirect to consola.php after 3 seconds
+                    //htmlspecialchars($error_message ?: 'Creado Existosamente');
+                    echo '<script>setTimeout(function(){ window.location.href = "consola.php"; }, 1000);</script>';
 
                 } else {
                     echo "<div class='alert alert-danger'>Error creando ticket: " . $result["error"] . "</div>";
@@ -203,7 +209,7 @@ include('templates/menu.php');
                 global $token;
         
                 // API endpoint for fetching users
-                $apiUrl = "http://localhost:8887/api/v1/auth/users";
+                $apiUrl = "http://auth-serv/api/v1/auth/users";
                 
                 // Initialize cURL session
                 $ch = curl_init();
@@ -262,7 +268,7 @@ include('templates/menu.php');
             // Function to get all customers
             function getCustomers($conn) {
                 $customers = [];
-                $sql = "SELECT customer_id, customer_name FROM Customers WHERE active = 1";
+                $sql = "SELECT customer_id, customer_name FROM customers WHERE active = 1";
                 $result = $conn->query($sql);
                 
                 while ($row = $result->fetch_assoc()) {
@@ -276,7 +282,7 @@ include('templates/menu.php');
             // SITIOS: Function to get sites by customer
             function getSitesByCustomer($conn, $customer_id) {
                 $sites = [];
-                $sql = "SELECT site_id, site_name FROM Sites WHERE customer_id = ? AND active = 1";
+                $sql = "SELECT site_id, site_name FROM sites WHERE customer_id = ? AND active = 1";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $customer_id);
                 $stmt->execute();
@@ -291,10 +297,10 @@ include('templates/menu.php');
             
 
 
-            $servername = "localhost";
+            $servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
             $username = "root";
-            $password = "admin";
-            $dbname = "micro_ots";
+            $password = "root";
+            $dbname = "micro_ot";
             
             //global $servername, $username, $password, $dbname;
             // Connect to database to get dropdown options

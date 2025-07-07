@@ -1,9 +1,9 @@
 <?php
 // Database connection parameters
-$servername = "localhost";
+$servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
 $username = "root";
-$password = "admin";
-$dbname = "micro_ots";
+$password = "root";
+$dbname = "micro_ot";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);

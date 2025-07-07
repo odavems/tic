@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $accessToken = $_GET['accessToken'] ?? null; // You might need to pass an access token
 
     if ($uuid) {
-        $api_url = "http://localhost:8887/api/users/" . $uuid;
+        $api_url = "http://auth-serv/api/users/" . $uuid;
         //$api_url = "http://localhost:8887/api/v1/auth/users/" . $uuid;
         
         $headers = [];

@@ -119,7 +119,7 @@
 
 // 3. Make the HTTP Request using curl
 
-    $apiUrl = 'http://localhost:8889/api/v1/emails';
+    $apiUrl = 'http://mail-service/api/v1/emails';
     $ch = curl_init($apiUrl);
 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -133,6 +133,7 @@
 
 
     $response = curl_exec($ch);
+    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
     // Check for errors
     if (curl_errno($ch)) {

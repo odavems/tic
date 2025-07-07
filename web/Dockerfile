@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libssl-dev \    
     libpq-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd xml pdo_pgsql
+    && docker-php-ext-install mysqli pdo_mysql mbstring exif pcntl bcmath gd xml pdo_pgsql
+
+#RUN docker-php-ext-install mysqli
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -21,12 +23,15 @@ WORKDIR /var/www/html
 
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader
+#solo para artisan, debe tener composer.json
+#RUN composer install --no-dev --optimize-autoloader
 
 EXPOSE 80
 
-COPY default.conf /etc/apache2/sites-available/000-default.conf
+#solo para artisan o falta configurar default.conf
+#COPY default.conf /etc/apache2/sites-available/000-default.conf
 
 RUN a2enmod rewrite
 
-RUN chmod +x artisan
+#solo para artisan
+#RUN chmod +x artisan

@@ -28,7 +28,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $data_string = json_encode($data);
     
     // Initialize cURL session
-    $ch = curl_init('http://localhost:8887/api/v1/auth/login');
+    //$ch = curl_init('http://localhost:8887/api/v1/auth/login');
+    
+    // Get the base API URL from an environment variable, with a fallback for local development.
+    $apiBaseUrl = getenv('AUTH_SERVICE_BASE_URL') ?: 'http://localhost:8887/api/v1';
+    // Initialize cURL session
+    $ch = curl_init($apiBaseUrl . '/auth/login');
     
     // Set cURL options
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");

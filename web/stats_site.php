@@ -5,10 +5,10 @@
 //JOIN tickets t ON s.site_id = t.site_id
 //GROUP BY s.site_name;
 
-$servername = "localhost";
+$servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
 $username = "root";
-$password = "admin";
-$dbname = "micro_ots";
+$password = "root";
+$dbname = "micro_ot";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

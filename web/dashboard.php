@@ -1,4 +1,7 @@
-<!doctype html>
+<?php
+session_start();
+?>
+
 <?php
     $pageTitle = 'Ticket Metrics Dashboard';
     include('templates/header.php');
@@ -86,7 +89,7 @@ include('templates/menu.php');
     
     <div class="header">
         
-        <h2 style="text-align: center;">Metricas de Ordenes de Trabajo</h2>
+        <h2 style="text-align: center;">Métricas de Órdenes de Trabajo</h2>
         <!-- <a href="index.php" class="logout">Logout</a> -->
     </div>
 
@@ -165,7 +168,7 @@ include('templates/menu.php');
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        label: 'Tickets by Status',
+                        label: 'OTs por Estado',
                         data: data.datasets[0].data,
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
@@ -290,13 +293,14 @@ include('templates/menu.php');
             fetch('stats_user_pie.php')
                 .then(response => response.json())
                 .then(data => {
+                    
                     const ctx = document.getElementById('ticketsByUserChart').getContext('2d');
                     const myChart = new Chart(ctx, {
                         type: 'doughnut', // Change the chart type to 'doughnut'
                         data: {
                             labels: data.labels,
                             datasets: [{
-                                label: 'Tickets by User',
+                                label: 'OTs por Técnico',
                                 data: data.datasets[0].data,
                                 backgroundColor: [
                                     'rgba(255, 99, 132, 0.6)',
@@ -345,7 +349,7 @@ include('templates/menu.php');
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        label: 'Tickets by Customer',
+                        label: 'OTs por Cliente',
                         data: data.datasets[0].data,
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
@@ -386,7 +390,7 @@ include('templates/menu.php');
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        label: 'Tickets by Site',
+                        label: 'OTs por Sitio',
                         data: data.datasets[0].data,
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
@@ -417,6 +421,14 @@ include('templates/menu.php');
             });
         });
     </script>
+
+
+<script>
+    <?php if (isset($_SESSION['users_names_and_uuids'])): ?>
+        console.log("Users data:", <?php echo json_encode($_SESSION['users_names_and_uuids']); ?>);
+        console.table(<?php echo json_encode($_SESSION['users_names_and_uuids']); ?>);
+    <?php endif; ?>
+</script>
 
 <?php
     include('templates/footer.php');

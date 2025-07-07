@@ -1,4 +1,8 @@
 <?php
+     if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
     $pageTitle = 'Create Ticket';
     include('templates/header.php');
 ?>
@@ -14,9 +18,6 @@ include('templates/menu.php');
 ?> 
 
 <?php 
-     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
 
         // Check if token exists in session, POST or GET
         $token = "";
@@ -54,10 +55,10 @@ include('templates/menu.php');
 
         <?php 
 
-            $servername = "localhost";
+            $servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
             $username = "root";
-            $password = "admin";
-            $dbname = "micro_ots";
+            $password = "root";
+            $dbname = "micro_ot";
     
             $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -128,7 +129,7 @@ include('templates/menu.php');
                     $new_value = $new_status;
                 
 
-                    $stmt = $conn->prepare("INSERT INTO Ticket_History (ticket_id, user_uuid, action, old_value, new_value) 
+                    $stmt = $conn->prepare("INSERT INTO ticket_history (ticket_id, user_uuid, action, old_value, new_value) 
                                         VALUES (?, ?, ?, ?, ?)");
                     $stmt->bind_param("issss", $ticket_id, $uuid, $action, $old_value, $new_value);
                     $stmt->execute();

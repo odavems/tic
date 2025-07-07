@@ -1,7 +1,8 @@
-
 <?php
 
-session_start();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
     // Check if token exists in session, POST or GET
     $token = "";
@@ -23,7 +24,7 @@ session_start();
 
     // If no token is found, redirect to login page
     if (empty($token)) {
-        header('Location: index.php');
+         echo '<script>setTimeout(function(){ window.location.href = "index.php"; }, 1000);</script>';
         //header('Location: login.php');
         exit();
     }
@@ -33,10 +34,10 @@ session_start();
     //echo("<script>console.log('echo Var token is " . $token . "');</script>");
 
 
-$servername = "localhost";
+$servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
 $username = "root";
-$password = "admin";
-$dbname = "micro_ots";
+$password = "root";
+$dbname = "micro_ot";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -75,7 +76,7 @@ if ($ticket_id === null) {
                 $action = "ticket_cancelado";
                 $new_value = "Ticket #$ticket_id cancelado";
                 
-                $stmt = $conn->prepare("INSERT INTO Ticket_History (ticket_id, user_uuid, action, old_value, new_value) 
+                $stmt = $conn->prepare("INSERT INTO ticket_history (ticket_id, user_uuid, action, old_value, new_value) 
                                     VALUES (?, ?, ?, ?, ?)");
                 $stmt->bind_param("issss", $ticket_id, $uuid, $action, $current_status, $new_value);
                 $stmt->execute();

@@ -1,14 +1,14 @@
 <?php
-session_start();
+//session_start();
 $error_message = "";
 if (isset($_SESSION['error_message'])) {
     $error_message = $_SESSION['error_message'];
     unset($_SESSION['error_message']);
 }
 ?>
-<!DOCTYPE html>
-<html>
-<head>
+
+
+
     <title>Error</title>
     <style>
         .error-popup {
@@ -26,17 +26,28 @@ if (isset($_SESSION['error_message'])) {
             max-width: 80%;
         }
     </style>
-</head>
-<body>
-    <div class="error-popup" id="errorPopup">
-        <?php echo htmlspecialchars($error_message); ?>
-    </div>
 
-    <script>
-        // Wait for 3 seconds and redirect
-        setTimeout(function() {
+
+ <div class="error-popup" id="errorPopup">
+    <?php echo htmlspecialchars(!empty($error_message) ? $error_message : 'ERROR DESCONOCIDO   '); ?>
+    ----- Re Direccion en  <span id="countdownNumber">  3  </span> segundos...
+</div>
+
+<div id="countdown">Redirecting in <span id="countdownNumber">3</span> seconds...</div>
+
+<script>
+    let countdown = 3;
+    const countdownElement = document.getElementById('countdownNumber');
+    
+    // Update countdown every second
+    const countdownInterval = setInterval(function() {
+        countdown--;
+        countdownElement.textContent = countdown;
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
             window.location.href = "index.php";
-        }, 3000);
-    </script>
-</body>
-</html>
+        }
+    }, 1000);
+</script>
+

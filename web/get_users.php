@@ -12,14 +12,20 @@
     $token = "";
     $token = $_SESSION['access_token'];
 
+    //$ch= curl_init();
     // API endpoint for fetching users
-    $apiUrl = "http://localhost:8887/api/v1/auth/users";
+    $apiBaseUrl = getenv('AUTH_SERVICE_BASE_URL') ?: 'http://localhost:8887/api/v1';
+    // Initialize cURL session
+    $ch = curl_init($apiBaseUrl . '/auth/users');
+
+    // API endpoint for fetching users
+    //$apiUrl = "http://localhost:8887/api/v1/auth/users";
     
     // Initialize cURL session
-    $ch = curl_init();
+    //$ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+    //curl_setopt($ch, CURLOPT_URL, $apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Authorization: Bearer ' . $token,
@@ -71,7 +77,15 @@
    //echo "<script>console.log('users: " . json_encode($users_names_and_uuids) . "');</script>"; 
     echo "<script>console.log('get_users.php  NAMES and UUIDS:', " . json_encode($users_names_and_uuids, JSON_PRETTY_PRINT) . ");</script>";
 
+
+    
 ?>
 
+<script>
+    <?php if (isset($_SESSION['users_names_and_uuids'])): ?>
+        console.log("Users data:", <?php echo json_encode($_SESSION['users_names_and_uuids']); ?>);
+        console.table(<?php echo json_encode($_SESSION['users_names_and_uuids']); ?>);
+    <?php endif; ?>
+</script>
 
 

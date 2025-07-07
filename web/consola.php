@@ -1,28 +1,28 @@
-<?php
-    $pageTitle = 'Consola OTs';
-    include('templates/header.php');
+<?php 
+$pageTitle = 'Consola OTs';
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
+    
+    include('get_tickets.php');
+    include('get_users.php');
+    
+?>
+
+<?php 
+include('templates/header.php');   
 ?>
 
 <link rel="stylesheet" href="css/consola.css">
 
 </head>
 
-
 <body>
 
 <?php 
 include('templates/menu.php');
 ?> 
-        <?php
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    } 
-    
-    include('get_tickets.php');
-    include('get_users.php');
-    
-    ?> 
     
     <!--
     <div class="header">
@@ -39,19 +39,7 @@ include('templates/menu.php');
     <h2>Consola de Ordenes de Trabajo</h2>
     <a href="index.php" class="logout">Logout</a>
 </div>
-    
-   
-    <?php
-    // if (session_status() === PHP_SESSION_NONE) {
-    //    session_start();
-    //} 
-    
-    //include('get_tickets.php');
-    //include('get_users.php');
-    //
-    ?> 
-   
-
+      
     <?php if (!empty($error_message)): ?>
         <div class="error"><?php echo htmlspecialchars($error_message); ?></div>
     <?php endif; ?>
@@ -81,10 +69,10 @@ include('templates/menu.php');
 
                 <?php 
                 // Establish a database connection (You'll need to fill in your credentials)
-                $servername = "localhost";
+                $servername = "db_server22_ot"; // Use the service name defined in docker-compose.yml
                 $username = "root";
-                $password = "admin";
-                $dbname = "micro_ots";
+                $password = "root";
+                $dbname = "micro_ot";
 
                 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -317,6 +305,7 @@ include('templates/menu.php');
         console.log("var escaped_supervisor_name = <?php echo $escaped_supervisor_name; ?>");
         console.log("var supervisor_name = <?php echo $supervisor_name; ?>");
         console.log("var user_role = <?php echo $user_role; ?>");
+                
         console.log("---->>> consola.php <<<----");
 
 

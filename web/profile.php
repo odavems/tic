@@ -1,14 +1,16 @@
 <?php
+    session_start();
     $pageTitle = 'User Profile';
+?>
+
+<?php
     include('templates/header.php');
 ?>
 
 <!-- <link rel="stylesheet" href="css/menu.css"> -->
 <link rel="stylesheet" href="css/profile.css">
 
-
 </head>
-
 
 <body>
 
@@ -18,9 +20,7 @@
 include('templates/menu.php'); 
 ?> 
 
-
 <?php 
-    session_start();
 
     // Check if token exists in session, POST or GET
     $token = "";
@@ -45,7 +45,7 @@ include('templates/menu.php');
     }
 ?> 
 
-    <h2>User Details</h2>
+    <h2>Detalle de Usuario</h2>
     <p>Bienvenido a su perfil!</p>
     <!-- <blink>Espere un momento hasta cargar los datos</blink> -->
 
